@@ -1,12 +1,16 @@
 import json
+import os
+import pandas as pd
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
-import numpy as np
+from dotenv import load_dotenv
+
+load_dotenv()
 
 sp = spotipy.Spotify(
     auth_manager=SpotifyOAuth(
-        client_id="",
-        client_secret="",
+        client_id=os.getenv("CLIENT_ID"),
+        client_secret=os.getenv("CLIENT_SECRET"),
         redirect_uri="https://coreyfoster.dev",
         scope="user-library-read playlist-modify-private",
     )
@@ -45,45 +49,34 @@ playlist_ids = [
 
 target_playlist_id = "0s0vBSB1C4QvKcqiUVxbmk"
 
-# Old code is below; working but could be better
 added = []
 
+# Use append() to add all the tracks from all the playlists to the added list
 for playlist_id in playlist_ids:
     playlist_items = sp.playlist_items(playlist_id)
-    # print(json.dumps(playlist_items["items"], indent=4))
-    for item in playlist_items["items"]:
-        # print(json.dumps(item["track"]["id"], indent=4))
-        if item["track"]["id"] and item["track"]["id"] not in added:
-            added.append(item["track"]["id"])
-            sp.user_playlist_add_tracks(
-                sp.me()["id"], target_playlist_id, [item["track"]["id"]]
-            )
+    track_ids = [
+        item["track"]["id"] for item in playlist_items["items"] if item["track"]["id"]
+    ]
+    added += track_ids
 
-####
+# Convert the added list to a pandas DataFrame to remove duplicates while maintaining order
+added_df = pd.DataFrame({"track_id": added})
+added_df.drop_duplicates(inplace=True)
 
-# Below is "optimized code" from ChatGPT; Much quicker but tracks are in randomized order
-# Use a set to store the added tracks
-# added = set()
+# Convert the tracks in the target playlist to a pandas DataFrame
+target_items = sp.playlist_items(target_playlist_id, fields="items(track.id)")["items"]
+target_df = pd.DataFrame({"track_id": [item["track"]["id"] for item in target_items]})
 
-# # Use set.update() to add all the tracks from all the playlists to the added set
-# for playlist_id in playlist_ids:
-#     playlist_items = sp.playlist_items(playlist_id)
-#     track_ids = [
-#         item["track"]["id"] for item in playlist_items["items"] if item["track"]["id"]
-#     ]
-#     added.update(track_ids)
+# Use pandas' merge() method to find the tracks that are not already in the target playlist
+tracks_to_add_df = added_df.merge(target_df, how="left", indicator=True)
+tracks_to_add = tracks_to_add_df.loc[
+    tracks_to_add_df["_merge"] == "left_only", "track_id"
+].tolist()
 
-# # Use set.difference() to find the tracks that are not already in the target playlist
-# tracks_to_add = list(
-#     added.difference(
-#         set(sp.playlist_items(target_playlist_id, fields="items(track.id)")["items"])
-#     )
-# )
+# Use sp.current_user() to get the user ID
+user_id = sp.current_user()["id"]
 
-# # Use sp.current_user() to get the user ID
-# user_id = sp.current_user()["id"]
-
-# # Use a batched approach to add tracks to the target playlist
-# while tracks_to_add:
-#     sp.playlist_add_items(target_playlist_id, tracks_to_add[:100])
-#     tracks_to_add = tracks_to_add[100:]
+# Use a batched approach to add tracks to the target playlist
+while tracks_to_add:
+    sp.playlist_add_items(target_playlist_id, tracks_to_add[:100])
+    tracks_to_add = tracks_to_add[100:]
