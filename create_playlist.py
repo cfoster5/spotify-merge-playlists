@@ -49,6 +49,15 @@ playlist_ids = [
 
 target_playlist_id = "0s0vBSB1C4QvKcqiUVxbmk"
 
+
+def get_playlist_tracks(playlist_id, fields):
+    results = sp.playlist_items(playlist_id, fields)
+    tracks = results["items"]
+    while results["next"]:
+        results = sp.next(results)
+        tracks.extend(results["items"])
+    return tracks
+
 added = []
 
 # Use append() to add all the tracks from all the playlists to the added list
@@ -64,7 +73,7 @@ added_df = pd.DataFrame({"track_id": added})
 added_df.drop_duplicates(inplace=True)
 
 # Convert the tracks in the target playlist to a pandas DataFrame
-target_items = sp.playlist_items(target_playlist_id, fields="items(track.id)")["items"]
+target_items = get_playlist_tracks(target_playlist_id, fields="items(track.id), next")
 target_df = pd.DataFrame({"track_id": [item["track"]["id"] for item in target_items]})
 
 # Use pandas' merge() method to find the tracks that are not already in the target playlist
