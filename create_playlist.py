@@ -58,11 +58,19 @@ def get_playlist_tracks(playlist_id, fields):
         tracks.extend(results["items"])
     return tracks
 
+
+def print_local_tracks_in_playlists(playlist_id, playlist_items):
+    for item in playlist_items["items"]:
+        if item["track"]["is_local"]:
+            print({"playlist_id": playlist_id, "track_name": item["track"]["name"]})
+
+
 added = []
 
 # Use append() to add all the tracks from all the playlists to the added list
 for playlist_id in playlist_ids:
     playlist_items = sp.playlist_items(playlist_id)
+    # print_local_tracks_in_playlists(playlist_id, playlist_items)
     track_ids = [
         item["track"]["id"] for item in playlist_items["items"] if item["track"]["id"]
     ]
