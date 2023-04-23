@@ -95,5 +95,5 @@ user_id = sp.current_user()["id"]
 
 # Use a batched approach to add tracks to the target playlist
 while tracks_to_add:
-    sp.playlist_add_items(target_playlist_id, tracks_to_add[:100])
+    sp.user_playlist_add_tracks(user_id, target_playlist_id, tracks_to_add[:100])
     tracks_to_add = tracks_to_add[100:]
