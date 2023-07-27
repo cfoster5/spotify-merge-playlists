@@ -66,7 +66,7 @@ df["tempo/2"] = round(df["tempo/2"]).astype(int)
 print(
     tabulate(
         df.replace(0, ""),
-        headers=["name", "tempo", "tempo/2"],
+        headers="keys",
         showindex=False,
     )
 )
