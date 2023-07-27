@@ -48,21 +48,13 @@ features = sp.audio_features(track_ids)
 table_data = []
 table_data.append(["Walls", 128, 64])
 
-for index, track in enumerate(features):
-    table_data.append(
-        [
-            tracks[index]["track"]["name"],
-            track["tempo"] if track["tempo"] < 130 else 0,
-            track["tempo"] / 2 if track["tempo"] / 2 > 46 else 0,
-            # track["tempo"] if track["tempo"] < 130 else track["tempo"] / 2,
-            # track["tempo"] / 2
-            # if track["tempo"] / 2 > 46 and track["tempo"] < 130
-            # else 0,
-        ]
-    )
-df = pd.DataFrame(table_data, columns=["name", "tempo", "tempo/2"])
-df["tempo"] = round(df["tempo"]).astype(int)
-df["tempo/2"] = round(df["tempo/2"]).astype(int)
+for track, feature in zip(tracks, features):
+    tempo = feature["tempo"] if feature["tempo"] < 130 else 0
+    half_tempo = feature["tempo"] / 2 if feature["tempo"] / 2 > 46 else 0
+    table_data.append([track["track"]["name"], round(tempo), round(half_tempo)])
+
+df = pd.DataFrame(table_data, columns=["name", "tempo", "half_tempo"])
+
 print(
     tabulate(
         df.replace(0, ""),
