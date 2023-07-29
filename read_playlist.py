@@ -28,13 +28,6 @@ def get_playlist_tracks(playlist_id, fields):
     return tracks
 
 
-def get_track_by_id(track_list, track_id):
-    for item in track_list:
-        if item["track"]["id"] == track_id:
-            return item["track"]
-    return None
-
-
 tracks = get_playlist_tracks(
     target_playlist_id,
     fields="items(track.id, track.name, track.artists), next",
